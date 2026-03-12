@@ -1,0 +1,51 @@
+{
+  "name": "family-tree",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev:server": "tsx watch server/index.ts",
+    "dev:client": "vite",
+    "dev": "concurrently \"pnpm run dev:server\" \"pnpm run dev:client\"",
+    "build": "vite build",
+    "start": "tsx server/index.ts",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "pm2:start": "pm2 start ecosystem.config.cjs",
+    "pm2:stop": "pm2 stop family-tree",
+    "pm2:restart": "pm2 restart family-tree",
+    "pm2:logs": "pm2 logs family-tree",
+    "deploy": "pnpm run build && pnpm run pm2:start"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.2.1",
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "html2canvas": "^1.4.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "tailwindcss": "^4.2.1",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.4.0",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@types/uuid": "^11.0.0",
+    "@vitejs/plugin-react": "^5.1.1",
+    "concurrently": "^9.1.0",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.5.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vite": "^8.0.0-beta.13"
+  },
+  "overrides": {
+    "vite": "^8.0.0-beta.13"
+  }
+}
