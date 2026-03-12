@@ -340,6 +340,14 @@ export default function App() {
 
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // 居中视图（需在 loadTree 等回调之前定义）
+  const hasCentered = useRef(false);
+  const [centerTrigger, setCenterTrigger] = useState(0);
+  const recenter = useCallback(() => {
+    hasCentered.current = false;
+    setCenterTrigger(n => n + 1);
+  }, []);
+
   const showToast = useCallback((message: string, type: ToastData['type'] = 'success') => {
     setToast({ message, type });
   }, []);
@@ -778,14 +786,6 @@ export default function App() {
 
   // 使用布局 Hook 计算节点位置
   const { positions, connections, maxDepth, totalWidth, totalHeight } = useTreeLayout(treeData);
-
-  // 居中视图
-  const hasCentered = useRef(false);
-  const [centerTrigger, setCenterTrigger] = useState(0);
-  const recenter = useCallback(() => {
-    hasCentered.current = false;
-    setCenterTrigger(n => n + 1);
-  }, []);
 
   useEffect(() => {
     if (hasCentered.current) return;
