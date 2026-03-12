@@ -7,7 +7,7 @@ import {
 import useTreeLayout, { NODE_W, NODE_H, LEVEL_H, LABEL_W, toGenerationLabel } from './useTreeLayout';
 import type { NodePosition, Connection } from './useTreeLayout';
 import type { TreeNode, TreeListItem, BackupListItem } from './types';
-import html2canvas from 'html2canvas';
+import { toPng } from 'html-to-image';
 
 // --- 默认空族谱模板 ---
 const emptyTreeTemplate: TreeNode = {
@@ -367,7 +367,7 @@ export default function App() {
       setSelectedNode(null);
       setShowListModal(false);
       setScale(1);
-      setPosition({ x: 0, y: 50 });
+      recenter();
       showToast('族谱加载成功');
     } catch (err) {
       showToast('加载族谱失败: ' + (err as Error).message, 'error');
@@ -415,8 +415,8 @@ export default function App() {
     setSelectedNode(null);
     setShowListModal(false);
     setScale(1);
-    setPosition({ x: 0, y: 50 });
-  }, []);
+    recenter();
+  }, [recenter]);
 
   const handleDeleteTree = useCallback(async (item: TreeListItem) => {
     if (!confirm(`确定要删除「${item.title}」吗？此操作将同时删除所有备份，且不可恢复。`)) return;
@@ -647,15 +647,14 @@ export default function App() {
 
       await new Promise<void>(r => requestAnimationFrame(() => requestAnimationFrame(() => r())));
 
-      const canvas = await html2canvas(element, {
-        backgroundColor: '#f9fafb',
-        scale: 2,
-        useCORS: true,
-        logging: false,
+      const dataUrl = await toPng(element, {
+        backgroundColor: '#f8fafc',
+        pixelRatio: 2,
       });
+      const safeName = (treeTitle || 'family_tree').replace(/[\n\r\t/\\:*?"<>|]/g, '').trim() || 'family_tree';
       const link = document.createElement('a');
-      link.download = `${treeTitle || 'family_tree'}.png`;
-      link.href = canvas.toDataURL('image/png');
+      link.download = safeName.endsWith('.png') ? safeName : `${safeName}.png`;
+      link.href = dataUrl;
       link.click();
       showToast('图片导出成功');
     } catch (error) {
@@ -780,6 +779,25 @@ export default function App() {
   // 使用布局 Hook 计算节点位置
   const { positions, connections, maxDepth, totalWidth, totalHeight } = useTreeLayout(treeData);
 
+  // 居中视图
+  const hasCentered = useRef(false);
+  const [centerTrigger, setCenterTrigger] = useState(0);
+  const recenter = useCallback(() => {
+    hasCentered.current = false;
+    setCenterTrigger(n => n + 1);
+  }, []);
+
+  useEffect(() => {
+    if (hasCentered.current) return;
+    const el = containerRef.current;
+    if (!el || totalWidth <= 0) return;
+    const containerW = el.clientWidth;
+    const treeFullW = LABEL_W * 2 + totalWidth + 80;
+    const x = Math.max(0, (containerW - treeFullW) / 2);
+    setPosition({ x, y: 20 });
+    hasCentered.current = true;
+  }, [totalWidth, centerTrigger]);
+
   // 渲染节点卡片
   const renderNodeCard = (pos: NodePosition) => {
     const { id, x, y, node } = pos;
@@ -805,9 +823,9 @@ export default function App() {
         }}
         onClick={(e: React.MouseEvent) => { e.stopPropagation(); setSelectedNode(node); }}
       >
-        {node.title && <div className="node-title">{node.title}</div>}
+        <div className="node-title" style={node.title ? undefined : { visibility: 'hidden' }}>{node.title || '\u00A0'}</div>
         <div className="node-name">{node.name}</div>
-        {node.spouse && <div className="node-spouse" title={node.spouse}>{node.spouse}</div>}
+        <div className="node-spouse" style={node.spouse ? undefined : { visibility: 'hidden', borderTop: 'none' }} title={node.spouse || ''}>{node.spouse || '\u00A0'}</div>
       </div>
     );
   };
@@ -925,7 +943,7 @@ export default function App() {
             🕐 备份
           </button>
           <div className="w-px h-6 bg-slate-200 mx-1"></div>
-          <button onClick={() => { setScale(1); setPosition({x:0, y:50}); }} className="px-3 py-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all text-sm">
+          <button onClick={() => { setScale(1); recenter(); }} className="px-3 py-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all text-sm">
             重置视图
           </button>
           <button id="export-img-btn" onClick={exportImage} className="px-3 py-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all text-sm">
