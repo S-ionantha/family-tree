@@ -4,6 +4,8 @@ interface ToolbarProps {
   treeTitle: string;
   currentTreeId: string | null;
   isSaving: boolean;
+  language: 'simplified' | 'traditional';
+  onLanguageChange: (lang: 'simplified' | 'traditional') => void;
   onOpenList: () => void;
   onSave: () => void;
   onSaveAs: () => void;
@@ -17,6 +19,8 @@ export default function Toolbar({
   treeTitle,
   currentTreeId,
   isSaving,
+  language,
+  onLanguageChange,
   onOpenList,
   onSave,
   onSaveAs,
@@ -26,6 +30,8 @@ export default function Toolbar({
   onExportJSON,
 }: ToolbarProps) {
   const [showMore, setShowMore] = useState(false);
+  const [showLangMenu, setShowLangMenu] = useState(false);
+  const langRef = useRef<HTMLDivElement>(null);
   const moreRef = useRef<HTMLDivElement>(null);
 
   // 点击外部区域关闭下拉菜单
@@ -39,6 +45,18 @@ export default function Toolbar({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showMore]);
+
+  // 点击外部区域关闭语言菜单
+  useEffect(() => {
+    if (!showLangMenu) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (langRef.current && !langRef.current.contains(e.target as Node)) {
+        setShowLangMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showLangMenu]);
 
   const handleMenuItem = (action: () => void) => {
     action();
@@ -89,6 +107,31 @@ export default function Toolbar({
             🕐 备份
           </button>
           <div className="w-px h-6 bg-slate-200 mx-1"></div>
+          {/* 繁简切换按钮 - 桌面端 */}
+          <div className="relative" ref={langRef}>
+            <button 
+              onClick={() => setShowLangMenu(!showLangMenu)}
+              className="px-3 py-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all text-sm"
+            >
+              {language === 'simplified' ? '简体' : '繁体'}
+            </button>
+            {showLangMenu && (
+              <div className="absolute right-0 top-full mt-1 w-32 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-50">
+                <button
+                  onClick={() => { onLanguageChange('simplified'); setShowLangMenu(false); }}
+                  className={`w-full text-left px-3 py-2 text-sm hover:bg-slate-50 transition-colors ${language === 'simplified' ? 'text-indigo-600 font-medium' : 'text-slate-600'}`}
+                >
+                  ✓ 简体
+                </button>
+                <button
+                  onClick={() => { onLanguageChange('traditional'); setShowLangMenu(false); }}
+                  className={`w-full text-left px-3 py-2 text-sm hover:bg-slate-50 transition-colors ${language === 'traditional' ? 'text-indigo-600 font-medium' : 'text-slate-600'}`}
+                >
+                  ✓ 繁体
+                </button>
+              </div>
+            )}
+          </div>
           <button onClick={onResetView} className="px-3 py-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all text-sm">
             重置视图
           </button>
@@ -124,6 +167,25 @@ export default function Toolbar({
               >
                 🕐 备份
               </button>
+              <div className="h-px bg-slate-100 my-1 mx-3"></div>
+              {/* 繁简切换 - 移动端 */}
+              <div className="px-4 py-2.5">
+                <p className="text-xs text-slate-400 mb-2">繁简切换</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { onLanguageChange('simplified'); setShowMore(false); }}
+                    className={`flex-1 px-3 py-1.5 rounded text-sm ${language === 'simplified' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}`}
+                  >
+                    简体
+                  </button>
+                  <button
+                    onClick={() => { onLanguageChange('traditional'); setShowMore(false); }}
+                    className={`flex-1 px-3 py-1.5 rounded text-sm ${language === 'traditional' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}`}
+                  >
+                    繁体
+                  </button>
+                </div>
+              </div>
               <div className="h-px bg-slate-100 my-1 mx-3"></div>
               <button
                 onClick={() => handleMenuItem(onResetView)}

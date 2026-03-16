@@ -23,5 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 
+.comate
 # Server runtime data
 server/data/

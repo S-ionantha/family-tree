@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import './App.css';
 import {
   fetchTrees, fetchTree, createTree, updateTree, deleteTree as apiDeleteTree,
@@ -19,6 +19,7 @@ import TreeCanvas from './components/TreeCanvas';
 
 // 拆分的工具 / 数据 / 样式 / Hook
 import { updateNode, deleteNodeFromTree, addChildNode } from './utils/treeUtils';
+import { convertTreeNode, convertTitle } from './utils/zhConvert';
 import { emptyTreeTemplate, initialData } from './data/templates';
 import { injectTreeStyles } from './styles/treeStyles';
 import useCanvasInteraction from './hooks/useCanvasInteraction';
@@ -41,6 +42,18 @@ export default function App() {
 
   // 画布交互
   const canvas = useCanvasInteraction();
+
+  // 语言状态（繁简体转换）
+  const [language, setLanguage] = useState<'simplified' | 'traditional'>('simplified');
+
+  // 转换后的显示数据（不修改原始数据）
+  const displayTreeData = useMemo(() => {
+    return convertTreeNode(treeData, language === 'simplified');
+  }, [treeData, language]);
+
+  const displayTreeTitle = useMemo(() => {
+    return convertTitle(treeTitle, language === 'simplified');
+  }, [treeTitle, language]);
 
   const showToast = useCallback((message: string, type: ToastData['type'] = 'success') => {
     setToast({ message, type });
@@ -344,7 +357,7 @@ export default function App() {
   useEffect(() => { injectTreeStyles(); }, []);
 
   // 使用布局 Hook 计算节点位置
-  const { positions, connections, maxDepth, totalWidth, totalHeight } = useTreeLayout(treeData);
+  const { positions, connections, maxDepth, totalWidth, totalHeight } = useTreeLayout(displayTreeData);
 
   // 自动居中视图
   useEffect(() => {
@@ -389,9 +402,11 @@ export default function App() {
 
       {/* 顶部工具栏 */}
       <Toolbar
-        treeTitle={treeTitle}
+        treeTitle={displayTreeTitle}
         currentTreeId={currentTreeId}
         isSaving={isSaving}
+        language={language}
+        onLanguageChange={setLanguage}
         onOpenList={() => { setShowListModal(true); loadTreeList(); }}
         onSave={handleSave}
         onSaveAs={handleSaveAs}
@@ -406,7 +421,7 @@ export default function App() {
         
         {/* 画布区域 */}
         <TreeCanvas
-          treeTitle={treeTitle}
+          treeTitle={displayTreeTitle}
           positions={positions}
           connections={connections}
           maxDepth={maxDepth}
@@ -431,7 +446,7 @@ export default function App() {
         {/* 右侧编辑面板 */}
         {selectedNode && (
           <NodeEditPanel
-            selectedNode={selectedNode}
+            selectedNode={convertTreeNode(selectedNode, language === 'simplified')}
             onClose={() => setSelectedNode(null)}
             onSaveNode={handleSaveNode}
             onAddChild={handleAddChild}
